@@ -13,6 +13,7 @@
 from enlace import *
 import time
 import numpy as np
+import random
 
 # voce deverá descomentar e configurar a porta com através da qual ira fazer comunicaçao
 #   para saber a sua porta, execute no terminal :
@@ -31,39 +32,51 @@ def main():
         #declaramos um objeto do tipo enlace com o nome "com". Essa é a camada inferior à aplicação. Observe que um parametro
         #para declarar esse objeto é o nome da porta.
         com1 = enlace(serialName)
-        
     
         # Ativa comunicacao. Inicia os threads e a comunicação seiral 
         com1.enable()
         #Se chegamos até aqui, a comunicação foi aberta com sucesso. Faça um print para informar.
         print("Abriu a comunicação")
-
-
-        
-        
-           
                   
         #aqui você deverá gerar os dados a serem transmitidos. 
         #seus dados a serem transmitidos são um array bytes a serem transmitidos. Gere esta lista com o 
         #nome de txBuffer. Esla sempre irá armazenar os dados a serem enviados.
 
-        #Endereco da imagem a ser transmitida
-        imageR = "img/helloworld.jpg"
-        #Endereco da imagem a ser recebida
-        imageW = "img/recebidaCopia.jpg"
+        comandos = {
+            1: b'\x00\x00\x00\x00', #4 BYTES
+            2: b'\x00\x00\xBB\x00', #4 BYTES
+            3: b'\xBB\x00\x00',    #3 BYTES
+            4: b'\x00\xBB\x00',    #3 BYTES
+            5: b'\x00\x00\xBB',    #3 BYTES
+            6: b'\x00\xAA',       #2 BYTES
+            7: b'\xBB\x00',       #2 BYTES
+            8: b'\x00',          #1 BYTE
+            9: b'\xBB',          #1 BYTE
+        }
 
-        # Carrega imagem
-        print("Carregando imagem para transmissão:")
-        print(f" - {imageR}")
-        print("-"*35)
+        overhead = {
+            'lixo': b'\xDD',
+            'comeco':b'\xEE',
+            'proximocomando':b'\xFF',
+            'finalizou':b'\xCC',
+        }
 
-        #txBuffer = imagem em bytes!
-        txBuffer = open(imageR,'rb').read()
-
+        qntd_comandos = random.randint(10,30)
+        txBuffer = b''
+        for n in range(qntd_comandos):
+            ncomando = random.randint(1,9)
+            txBuffer += comandos[ncomando]+overhead['proximocomando']
+        #txBuffer = txBuffer[:-3]
+        txBuffer = txBuffer+overhead['finalizou']
+        print('\n')
         print(txBuffer)
-       
+        print('\n')
         #faça aqui uma conferência do tamanho do seu txBuffer, ou seja, quantos bytes serão enviados.
-        print("Meu array de bytes tem tamanho {}" .format(len(txBuffer)))
+       
+    
+
+        print(f"Meu array de bytes tem tamanho {len(txBuffer)} bytes")
+
             
         #finalmente vamos transmitir os todos. Para isso usamos a funçao sendData que é um método da camada enlace.
         #faça um print para avisar que a transmissão vai começar.
@@ -81,23 +94,22 @@ def main():
         #Agora vamos iniciar a recepção dos dados. Se algo chegou ao RX, deve estar automaticamente guardado
         #Observe o que faz a rotina dentro do thread RX
         #print um aviso de que a recepção vai começar.
-        print('Salvando dados no arquivo:')
-        print(f" - {imageW}")
-        print("-"*35)
         #Será que todos os bytes enviados estão realmente guardadas? Será que conseguimos verificar?
         #Veja o que faz a funcao do enlaceRX  getBufferLen
 
         #acesso aos bytes recebidos
         txLen = len(txBuffer)
         rxBuffer, nRx = com1.getData(txLen)
-        f = open(imageW,'wb')
-        f.write(txBuffer)
-        f.close
+        
         print("recebeu {} bytes" .format(len(rxBuffer)))
         
         for i in range(len(rxBuffer)):
             print("recebeu {}" .format(rxBuffer[i]))    
     
+        
+        print('\n')
+        print(rxBuffer)
+        print('\n')
         # Encerra comunicação
         print("-------------------------")
         print("Comunicação encerrada")
@@ -108,7 +120,6 @@ def main():
         print("ops! :-\\")
         print(erro)
         com1.disable()
-        
 
     #so roda o main quando for executado do terminal ... se for chamado dentro de outro modulo nao roda
 if __name__ == "__main__":
