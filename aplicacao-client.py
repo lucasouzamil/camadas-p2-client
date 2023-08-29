@@ -14,6 +14,7 @@ from enlace import *
 import time
 import numpy as np
 import random
+import time
 
 # voce deverá descomentar e configurar a porta com através da qual ira fazer comunicaçao
 #   para saber a sua porta, execute no terminal :
@@ -55,19 +56,19 @@ def main():
         }
 
         overhead = {
-            'lixo': b'\xDD',
-            'comeco':b'\xEE',
             'proximocomando':b'\xFF',
-            'finalizou':b'\xCC',
         }
 
         qntd_comandos = random.randint(10,30)
         txBuffer = b''
         for n in range(qntd_comandos):
             ncomando = random.randint(1,9)
-            txBuffer += comandos[ncomando]+overhead['proximocomando']
-        #txBuffer = txBuffer[:-3]
-        txBuffer = txBuffer+overhead['finalizou']
+            if n > 9:
+                txBuffer += comandos[ncomando]+overhead['proximocomando']
+            else:
+                txBuffer += comandos[ncomando]
+
+        print(f'qntd: {qntd_comandos}')
         print('\n')
         print(txBuffer)
         print('\n')
@@ -75,7 +76,7 @@ def main():
        
     
 
-        print(f"Meu array de bytes tem tamanho {len(txBuffer)} bytes")
+        print(f"Meu array de bytes tem tamanho {(len(txBuffer))} bytes")
 
             
         #finalmente vamos transmitir os todos. Para isso usamos a funçao sendData que é um método da camada enlace.
@@ -84,28 +85,41 @@ def main():
         #Cuidado! Apenas trasmita arrays de bytes!
                
         print('Comçando transmissão de dados:')
-        com1.sendData(np.asarray(txBuffer))  #as array apenas como boa pratica para casos de ter uma outra forma de dados
-          
+        com1.sendData(np.asarray(b'x00'))    #enviar byte de lixo
+        time.sleep(.5)
+        com1.sendData(np.asarray(bytes.fromhex(hex(len(txBuffer))[2:])))  #as array apenas como boa pratica para casos de ter uma outra forma de dados
+        time.sleep(.5)
+        com1.sendData(np.asarray(txBuffer))          
         # A camada enlace possui uma camada inferior, TX possui um método para conhecermos o status da transmissão
         # O método não deve estar fincionando quando usado como abaixo. deve estar retornando zero. Tente entender como esse método funciona e faça-o funcionar.
         txSize = com1.tx.getStatus()
         print('enviou = {}' .format(txSize))
         
-        #Agora vamos iniciar a recepção dos dados. Se algo chegou ao RX, deve estar automaticamente guardado
-        #Observe o que faz a rotina dentro do thread RX
-        #print um aviso de que a recepção vai começar.
-        #Será que todos os bytes enviados estão realmente guardadas? Será que conseguimos verificar?
-        #Veja o que faz a funcao do enlaceRX  getBufferLen
+        tempo_inicial = time.time()
+        duracao_maxima = 5  # em segundos
+        com1.rx.clearBuffer()
+        print('Esperando byte de sacrificio')
+        rxBuffer, nRx = com1.getData(1)
+        com1.rx.clearBuffer()
+        time.sleep(.05)
+        recebeu = False
+        while time.time() - tempo_inicial < duracao_maxima:
+            if com1.rx.getBufferLen() > 0:
+                rxBuffer, nRx = com1.getData(1)
+                time.sleep(.05)
+                recebeu = True
+                #qntd_comandos=int.from_bytes(rxBuffer)
+                break
+            time.sleep(1)
 
-        #acesso aos bytes recebidos
-        txLen = len(txBuffer)
-        rxBuffer, nRx = com1.getData(txLen)
+        if recebeu:
+            qntd = int.from_bytes(rxBuffer, byteorder='big')
+            print(f"A quantidade de códgios que o server recebeu foi de {qntd}")
+        else:
+            print('\n')
+            print("error: TIME OUT")
+            print('\n')
         
-        print("recebeu {} bytes" .format(len(rxBuffer)))
-        
-        for i in range(len(rxBuffer)):
-            print("recebeu {}" .format(rxBuffer[i]))    
-    
         
         print('\n')
         print(rxBuffer)
