@@ -29,6 +29,7 @@ serialName = "COM3"                   # Windows(variacao de)
 
 def main():
     try:
+        print('')
         print("Iniciou o main")
         #declaramos um objeto do tipo enlace com o nome "com". Essa é a camada inferior à aplicação. Observe que um parametro
         #para declarar esse objeto é o nome da porta.
@@ -38,6 +39,7 @@ def main():
         com1.enable()
         #Se chegamos até aqui, a comunicação foi aberta com sucesso. Faça um print para informar.
         print("Abriu a comunicação")
+        print('')
                   
         #aqui você deverá gerar os dados a serem transmitidos. 
         #seus dados a serem transmitidos são um array bytes a serem transmitidos. Gere esta lista com o 
@@ -63,10 +65,9 @@ def main():
         txBuffer = b''
         for n in range(qntd_comandos_enviados):
             ncomando = random.randint(1,9)
-            if n > 9:
-                txBuffer += comandos[ncomando]+overhead['proximocomando']
-            else:
-                txBuffer += comandos[ncomando]
+            txBuffer += comandos[ncomando]+overhead['proximocomando']
+            print(comandos[ncomando])
+
                
         print('')
         print("------------------------------")
@@ -109,14 +110,14 @@ def main():
                 print('\n')
                 print('*'*60)
                 print(f"#                         SUCESSO                          #")
-                print(f'#   O server recebeu a quantidade de comandos enviados -> {qntd_comandos_recebidos}    #')
+                print(f'# O server recebeu a quantidade de comandos enviados -> {qntd_comandos_recebidos}  #')
                 print('*'*60)
                 print('\n')
             else:
                 print('\n')
                 print('*'*60)
                 print(f'#                         FALHA                            #')
-                print(f'#       O server recebeu {qntd_comandos_recebidos} mas o cliente enviou {qntd_comandos_enviados}       #')
+                print(f'#         O server recebeu {qntd_comandos_recebidos} mas o cliente enviou {qntd_comandos_enviados}       #')
                 print('*'*60)
                 print('\n')
         else:
