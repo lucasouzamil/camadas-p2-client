@@ -59,32 +59,22 @@ def main():
             'proximocomando':b'\xFF',
         }
 
-        qntd_comandos = random.randint(10,30)
+        qntd_comandos_enviados = random.randint(10,30)
         txBuffer = b''
-        for n in range(qntd_comandos):
+        for n in range(qntd_comandos_enviados):
             ncomando = random.randint(1,9)
             if n > 9:
                 txBuffer += comandos[ncomando]+overhead['proximocomando']
             else:
                 txBuffer += comandos[ncomando]
-
-        print(f'qntd: {qntd_comandos}')
-        print('\n')
-        print(txBuffer)
-        print('\n')
-        #faça aqui uma conferência do tamanho do seu txBuffer, ou seja, quantos bytes serão enviados.
-       
-    
-
-        print(f"Meu array de bytes tem tamanho {(len(txBuffer))} bytes")
-
-            
-        #finalmente vamos transmitir os todos. Para isso usamos a funçao sendData que é um método da camada enlace.
-        #faça um print para avisar que a transmissão vai começar.
-        #tente entender como o método send funciona!
-        #Cuidado! Apenas trasmita arrays de bytes!
                
+        print('')
+        print("------------------------------")
         print('Comçando transmissão de dados:')
+        print("------------------------------")
+        print('\n')
+        print(f"Eviando {qntd_comandos_enviados} comandos")
+        
         com1.sendData(np.asarray(b'x00'))    #enviar byte de lixo
         time.sleep(.5)
         com1.sendData(np.asarray(bytes.fromhex(hex(len(txBuffer))[2:])))  #as array apenas como boa pratica para casos de ter uma outra forma de dados
@@ -93,7 +83,8 @@ def main():
         # A camada enlace possui uma camada inferior, TX possui um método para conhecermos o status da transmissão
         # O método não deve estar fincionando quando usado como abaixo. deve estar retornando zero. Tente entender como esse método funciona e faça-o funcionar.
         txSize = com1.tx.getStatus()
-        print('enviou = {}' .format(txSize))
+        print('O tamanho da mensagem tem {} bytes' .format(txSize))
+        print('')
         
         tempo_inicial = time.time()
         duracao_maxima = 5  # em segundos
@@ -108,22 +99,34 @@ def main():
                 rxBuffer, nRx = com1.getData(1)
                 time.sleep(.05)
                 recebeu = True
-                #qntd_comandos=int.from_bytes(rxBuffer)
                 break
-            time.sleep(1)
+            print('.')
+            time.sleep(0.1)
 
         if recebeu:
-            qntd = int.from_bytes(rxBuffer, byteorder='big')
-            print(f"A quantidade de códgios que o server recebeu foi de {qntd}")
+            qntd_comandos_recebidos = int.from_bytes(rxBuffer, byteorder='big')
+            if qntd_comandos_recebidos == qntd_comandos_enviados:
+                print('\n')
+                print('*'*60)
+                print(f"#                         SUCESSO                          #")
+                print(f'#   O server recebeu a quantidade de comandos enviados -> {qntd_comandos_recebidos}    #')
+                print('*'*60)
+                print('\n')
+            else:
+                print('\n')
+                print('*'*60)
+                print(f'#                         FALHA                            #')
+                print(f'#       O server recebeu {qntd_comandos_recebidos} mas o cliente enviou {qntd_comandos_enviados}       #')
+                print('*'*60)
+                print('\n')
         else:
             print('\n')
-            print("error: TIME OUT")
+            print('#'*19)
+            print('#      FALHA      #')
+            print("# error: TIME OUT #")
+            print('#'*19)
             print('\n')
         
-        
-        print('\n')
-        print(rxBuffer)
-        print('\n')
         # Encerra comunicação
         print("-------------------------")
         print("Comunicação encerrada")
